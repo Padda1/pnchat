@@ -2,30 +2,121 @@
     ViewBag.Title = "Home Page";
 }
 
-<div class="jumbotron">
-    <h1>ASP.NET</h1>
-    <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-    <p><a href="http://asp.net" class="btn btn-primary btn-lg">Learn more &raquo;</a></p>
+<div class="panel panel-default">
+    <div class="panel-body" id="time"></div>
 </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <h2>Getting started</h2>
-        <p>
-            ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-            enables a clean separation of concerns and gives you full control over markup
-            for enjoyable, agile development.
-        </p>
-        <p><a class="btn btn-default" href="http://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Get more libraries</h2>
-        <p>NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-        <p><a class="btn btn-default" href="http://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Web Hosting</h2>
-        <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-        <p><a class="btn btn-default" href="http://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
+<div class="panel panel-default">
+    <div id="curve_chart" style="height: 250px" class="col-md-12"></div>
+</div>
+
+<div class="panel panel-default">
+    <form role="form" class="form-horizontal">
+        <div class="panel-body form-group">
+            <label for="username" class="col-md-1">Username:</label>
+            <div class="col-md-2">
+                <input type="text" id="username" class="form-control" />
+            </div>
+            <div class="col-md-9">
+                <input type="button" id="sendusername" value="Login" class="btn btn-default" />
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="panel panel-default">
+    <form role="form" class="form-horizontal">
+        <div class="panel-body form-group">
+            <label for="user" class="col-md-1">To:</label>
+            <div class="col-md-2">
+                <input type="text" id="user" class="form-control" />
+            </div>
+            <label for="message" class="col-md-1">Message:</label>
+            <div class="col-md-2">
+                <input type="text" id="message" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <input type="button" id="sendmessage" value="Send" class="btn btn-success" />
+            </div>
+            <div>
+                <input type="hidden" id="displayname" />
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <ul id="discussion" class="list-group col-md-12 form-group"></ul>
     </div>
 </div>
+
+@section scripts{
+
+    <script src="~/Scripts/jquery-1.10.2.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.0.js"></script>
+    <script src="/signalr/hubs"></script>
+
+    @* GoogleCharts *@
+    <script type="text/javascript"
+            src="https://www.google.com/jsapi?autoload={
+            'modules':[{
+              'name':'visualization',
+              'version':'1',
+              'packages':['corechart']
+            }]
+          }"></script>
+
+
+    <script type="text/javascript">
+        $(function () {
+            var chat = $.connection.chatHub;
+
+            chat.client.addChatMessage = function (msg) {
+                var encodedName = $('<div />').text(msg).html();
+
+                $('#discussion').append('<li><strong>' + msg + '</li>');
+            };
+
+            chat.client.displayDateTime = function (date) {
+                var encodedDate = $('<div />').text(date).html();
+                $('#time').text(encodedDate);
+            };
+
+            $('#message').focus();
+            $.connection.hub.start().done(function () {
+                $('#sendmessage').click(function () {
+                    chat.server.sendChatMessage($('#user').val(), $('#username').val(), $('#message').val());
+
+                    $('#message').val('').focus();
+                });
+            });
+
+            $('#sendusername').click(function () {
+                chat.server.addUser($('#username').val());
+
+                $('#message').val('').focus();
+            });
+
+            //GoogleCharts
+            chat.client.drawGoogleChart = function (usageArray) {
+                google.setOnLoadCallback(drawChart(usageArray));
+            };
+
+            function drawChart(usageArray) {
+
+                var data = google.visualization.arrayToDataTable(usageArray);
+
+                var options = {
+                    title: 'Usage',
+                    curveType: 'function',
+                    legend: { position: 'bottom' }
+                };
+
+                var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+                chart.draw(data, options);
+            }
+        });
+    </script>
+}
