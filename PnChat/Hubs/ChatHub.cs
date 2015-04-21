@@ -125,7 +125,7 @@ namespace PnChat.Hubs
             //_connections.Add(name, Context.ConnectionId);
 
             GetDateTime();
-            ServerMessage();
+            //ServerMessage();
             DrawRandomChart();
 
             return base.OnConnected();
